@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Babyland Lead Hub - Phone Leads</title>
+  <meta name="description" content="Babyland Bilingual Academy - Phone Lead Registration System">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ─────────────────────────────── */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* ── Design Tokens ────────────────────── */
+    :root {
+      --gold: #F5A623;
+      --gold-dark: #D4891A;
+      --gold-light: #FFC85C;
+      --gold-pale: #FFF8E7;
+      --blue: #1A56DB;
+      --blue-dark: #1042A3;
+      --blue-light: #3B82F6;
+      --green: #22C55E;
+      --green-bg: #DCFCE7;
+      --red: #EF4444;
+      --red-bg: #FEE2E2;
+      --orange: #F97316;
+      --text: #1F2937;
+      --text-light: #6B7280;
+      --text-muted: #9CA3AF;
+      --bg-main: #FAFAF8;
+      --bg-card: #FFFFFF;
+      --bg-input: #F9FAFB;
+      --border: #E5E7EB;
+      --border-gold: #F5A623;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --shadow-card: 0 4px 24px rgba(245, 166, 35, 0.12), 0 1px 4px rgba(0,0,0,0.04);
+      --shadow-btn: 0 4px 14px rgba(26, 86, 219, 0.35);
+      --shadow-input: 0 0 0 4px rgba(245, 166, 35, 0.15);
+      --font-display: 'Fredoka', sans-serif;
+      --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* ── Body ─────────────────────────────── */
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-main);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.55;
+      background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(245, 166, 35, 0.07) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 100%, rgba(26, 86, 219, 0.05) 0%, transparent 55%);
+    }
+
+    /* ── Container com moldura dourada ───── */
+    .page-frame {
+      max-width: 580px;
+      margin: 24px auto;
+      border: 3px solid var(--border-gold);
+      border-radius: var(--radius-xl);
+      background: var(--bg-card);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      animation: frameIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes frameIn {
+      from { opacity: 0; transform: translateY(24px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .page-inner {
+      padding: 28px 28px 32px;
+    }
+
+    /* ── Header ───────────────────────────── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      animation: fadeSlideDown 0.5s ease-out 0.15s both;
+    }
+
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      border: 2px solid var(--gold);
+      box-shadow: 0 2px 8px rgba(245, 166, 35, 0.2);
+    }
+
+    .brand-text { display: flex; flex-direction: column; }
+
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--gold-dark);
+      letter-spacing: -0.01em;
+    }
+
+    .brand-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── Language Selector (bandeiras) ──── */
+    .lang-selector {
+      display: flex;
+      gap: 6px;
+      background: var(--gold-pale);
+      padding: 5px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(245, 166, 35, 0.25);
+    }
+
+    .lang-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: all 0.25s ease;
+      line-height: 1;
+      position: relative;
+    }
+
+    .lang-btn::after {
+      content: attr(data-code);
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      font-weight: 700;
+      font-family: var(--font-body);
+      color: var(--text-muted);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .lang-btn:hover {
+      background: rgba(245, 166, 35, 0.15);
+      transform: scale(1.1);
+    }
+
+    .lang-btn.active {
+      background: var(--gold);
+      box-shadow: 0 2px 6px rgba(245, 166, 35, 0.35);
+      transform: scale(1.05);
+    }
+
+    .lang-btn.active::after { opacity: 1; color: white; }
+
+    /* ── Stats Cards (topo) ───────────────── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+      animation: fadeSlideUp 0.5s ease-out 0.25s both;
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-card {
+      border-radius: var(--radius-md);
+      padding: 14px 12px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: inherit;
+      opacity: 0.12;
+      border-radius: inherit;
+    }
+
+    .stat-card.gold   { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: white; }
+    .stat-card.green  { background: linear-gradient(135deg, #16A34A, var(--green)); color: white; }
+    .stat-card.blue   { background: linear-gradient(135deg, var(--blue), var(--blue-light)); color: white; }
+
+    .stat-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      opacity: 0.9;
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    /* ── Form Card ─────────────────────────── */
+    .form-section {
+      animation: fadeSlideUp 0.5s ease-out 0.35s both;
+    }
+
+    .form-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--gold-pale);
+    }
+
+    .form-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-light) 100%);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(26, 86, 219, 0.25);
+    }
+
+    .form-icon svg {
+      width: 24px;
+      height: 24px;
+      color: white;
+    }
+
+    .form-titles h1 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--blue);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .form-titles .subtitle {
+      color: var(--text-light);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    /* ── Form Fields ──────────────────────── */
+    .form-group { margin-bottom: 18px; }
+
+    label:not(.radio-option) {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+      margin-bottom: 7px;
+      letter-spacing: 0.01em;
+    }
+
+    label .icon-label {
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .required { color: var(--red); font-weight: 700; }
+
+    input, textarea {
+      width: 100%;
+      padding: 13px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-family: var(--font-body);
+      background: var(--bg-input);
+      color: var(--text);
+      transition: all 0.25s ease;
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: white;
+      box-shadow: var(--shadow-input);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    /* ── Qualification (radio chips) ──────── */
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      background: var(--bg-input);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-light);
+      user-select: none;
+    }
+
+    .radio-option:hover {
+      border-color: var(--gold);
+      background: var(--gold-pale);
+    }
+
+    .radio-option input { display: none; }
+
+    .radio-option:has(input:checked) {
+      background: var(--gold-pale);
+      border-color: var(--gold);
+      color: var(--gold-dark);
+      font-weight: 600;
+    }
+
+    .chip-emoji { font-size: 15px; flex-shrink: 0; }
+
+    .radio-dot {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .radio-option:has(input:checked) .radio-dot {
+      border-color: var(--gold);
+      background: var(--gold);
+    }
+
+    .radio-dot::after {
+      content: '';
+      width: 5px;
+      height: 5px;
+      background: white;
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(0);
+      transition: all 0.2s ease;
+    }
+
+    .radio-option:has(input:checked) .radio-dot::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* ── Submit Button ─────────────────────── */
+    .btn-submit {
+      width: 100%;
+      padding: 15px 24px;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 700;
+      font-family: var(--font-display);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+      box-shadow: var(--shadow-btn);
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(26, 86, 219, 0.45);
+    }
+
+    .btn-submit:active { transform: translateY(0); }
+
+    .btn-submit:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-submit .btn-icon { font-size: 17px; }
+
+    /* ── Spinner ───────────────────────────── */
+    .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .btn-submit.loading .spinner { display: inline-block; }
+    .btn-submit.loading .btn-icon { display: none; }
+
+    /* ── Alert ─────────────────────────────── */
+    .alert {
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      margin-top: 18px;
+      font-size: 14px;
+      font-weight: 600;
+      display: none;
+      animation: fadeSlideUp 0.3s ease-out;
+      border-left: 4px solid transparent;
+    }
+
+    .alert.success {
+      background: var(--green-bg);
+      color: #166534;
+      border-left-color: var(--green);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert.error {
+      background: var(--red-bg);
+      color: #991B1B;
+      border-left-color: var(--red);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Footer ────────────────────────────── */
+    .footer {
+      text-align: center;
+      padding: 16px 20px;
+      background: var(--gold-pale);
+      border-top: 1px solid rgba(245, 166, 35, 0.15);
+    }
+
+    .footer-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .footer-brand {
+      color: var(--gold-dark);
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    /* ── Responsive ────────────────────────── */
+    @media (max-width: 600px) {
+      .page-frame {
+        margin: 12px;
+        border-width: 2px;
+        border-radius: var(--radius-lg);
+      }
+
+      .page-inner { padding: 20px 18px 24px; }
+
+      .brand-name { font-size: 19px; }
+      .brand-logo { width: 44px; height: 44px; }
+
+      .stats-bar {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .stat-value { font-size: 22px; }
+      .stat-label { font-size: 8px; }
+
+      .form-titles h1 { font-size: 19px; }
+
+      .radio-group { gap: 6px; }
+      .radio-option { padding: 8px 10px; font-size: 12px; }
+    }
+
+    @media (max-width: 380px) {
+      .stats-bar {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .stat-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+      }
+
+      .stat-value { font-size: 20px; }
+    }
+
+    /* ── Utility ───────────────────────────── */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-frame" id="pageFrame">
+    <div class="page-inner">
+
+      <!-- ── Header ─────────────────────── -->
+      <header>
+        <div class="brand">
+          <img src="logo.png" alt="Babyland Logo" class="brand-logo">
+          <div class="brand-text">
+            <span class="brand-name">Babyland</span>
+            <span class="brand-tag">Bilingual Academy</span>
+          </div>
+        </div>
+        <div class="lang-selector">
+          <button class="lang-btn" data-lang="pt" data-code="PT" aria-label="Português" title="Português">🇧🇷</button>
+          <button class="lang-btn" data-lang="en" data-code="EN" aria-label="English" title="English">🇺🇸</button>
+          <button class="lang-btn" data-lang="es" data-code="ES" aria-label="Español" title="Español">🇪🇸</button>
+        </div>
+      </header>
+
+      <!-- ── Stats Bar ──────────────────── -->
+      <div class="stats-bar" aria-label="Lead statistics">
+        <div class="stat-card gold" id="statToday">
+          <div class="stat-label todayLabel">Today</div>
+          <div class="stat-value" id="statTodayVal">0</div>
+        </div>
+        <div class="stat-card green" id="statWeek">
+          <div class="stat-label weekLabel">This Week</div>
+          <div class="stat-value" id="statWeekVal">0</div>
+        </div>
+        <div class="stat-card blue" id="statTotal">
+          <div class="stat-label totalLabel">Total</div>
+          <div class="stat-value" id="statTotalVal">0</div>
+        </div>
+      </div>
+
+      <!-- ── Form Section ───────────────── -->
+      <div class="form-section">
+        <div class="form-header">
+          <div class="form-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+          </div>
+          <div class="form-titles">
+            <h1 class="title">Registro de Lead Telefônico</h1>
+            <p class="subtitle">Registre um novo lead via chamada</p>
+          </div>
+        </div>
+
+        <form id="leadForm" autocomplete="off">
+          <div class="form-group">
+            <label class="leadNameLabel">
+              <span class="icon-label">👤</span>
+              Nome do Lead <span class="required">*</span>
+            </label>
+            <input type="text" id="leadName" required placeholder="Digite o nome do lead" aria-required="true">
+          </div>
+
+          <div class="form-group">
+            <label class="phoneLabel">
+              <span class="icon-label">📱</span>
+              Telefone <span class="required">*</span>
+            </label>
+            <input type="tel" id="phone" required placeholder="+5511999999999" aria-required="true">
+          </div>
+
+          <div class="form-group">
+            <label class="summaryLabel">
+              <span class="icon-label">📝</span>
+              Resumo da Ligação
+            </label>
+            <textarea id="summary" placeholder="Breve resumo da conversa..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="qualificationLabel">
+              <span class="icon-label">🏷️</span>
+              Qualificação <span class="required">*</span>
+            </label>
+            <div class="radio-group" id="qualification" role="radiogroup">
+              <label class="radio-option">
+                <input type="radio" name="qualification" value="tour-agendado">
+                <span class="radio-dot"></span>
+                <span class="chip-emoji">🗓️</span>
+                <span class="tourLabel">Tour Agendado</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="qualification" value="lead-frio">
+                <span class="radio-dot"></span>
+                <span class="chip-emoji">❄️</span>
+                <span class="coldLabel">Lead Frio</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="qualification" value="lead-quente">
+                <span class="radio-dot"></span>
+                <span class="chip-emoji">🔥</span>
+                <span class="hotLabel">Lead Quente</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="qualification" value="work-information">
+                <span class="radio-dot"></span>
+                <span class="chip-emoji">💼</span>
+                <span class="workLabel">Work Information</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="qualification" value="pais-escola">
+                <span class="radio-dot"></span>
+                <span class="chip-emoji">🏫</span>
+                <span class="parentsLabel">Pais Escola</span>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit submitBtn" id="submitBtn">
+            <span class="btn-icon">📤</span>
+            <span class="spinner"></span>
+            <span class="btn-text">Cadastrar Lead</span>
+          </button>
+        </form>
+
+        <div class="alert" id="alert" role="alert" aria-live="polite"></div>
+      </div>
+
+    </div>
+
+    <!-- ── Footer ───────────────────────── -->
+    <div class="footer">
+      <span class="footer-text">Powered by <span class="footer-brand">Babyland</span> Lead Hub</span>
+    </div>
+  </div>
+
+  <script>
+    /* ── Translations ─────────────────────── */
+    const translations = {
+      en: {
+        title: "Phone Lead Registration",
+        subtitle: "Register a new lead from phone call",
+        leadName: "Lead Name",
+        phone: "Phone",
+        summary: "Call Summary",
+        qualification: "Qualification",
+        tourLabel: "Tour Scheduled",
+        coldLabel: "Cold Lead",
+        hotLabel: "Hot Lead",
+        workLabel: "Work Info",
+        parentsLabel: "Parents School",
+        submitBtn: "Register Lead",
+        submitting: "Registering...",
+        success: "✅ Lead registered successfully!",
+        error: "❌ Error registering lead. Try again.",
+        namePlaceholder: "Enter lead name",
+        phonePlaceholder: "+1234567890",
+        summaryPlaceholder: "Brief summary of the conversation...",
+        required: "This field is required",
+        todayLabel: "Today",
+        weekLabel: "This Week",
+        totalLabel: "Total"
+      },
+      es: {
+        title: "Registro de Lead Telefónico",
+        subtitle: "Registrar un nuevo lead desde llamada",
+        leadName: "Nombre del Lead",
+        phone: "Teléfono",
+        summary: "Resumen de la Llamada",
+        qualification: "Calificación",
+        tourLabel: "Tour Programado",
+        coldLabel: "Lead Frío",
+        hotLabel: "Lead Caliente",
+        workLabel: "Info de Trabajo",
+        parentsLabel: "Padres Escuela",
+        submitBtn: "Registrar Lead",
+        submitting: "Registrando...",
+        success: "✅ ¡Lead registrado exitosamente!",
+        error: "❌ Error al registrar lead. Intente de nuevo.",
+        namePlaceholder: "Ingrese el nombre del lead",
+        phonePlaceholder: "+1234567890",
+        summaryPlaceholder: "Breve resumen de la conversación...",
+        required: "Este campo es requerido",
+        todayLabel: "Hoy",
+        weekLabel: "Esta Semana",
+        totalLabel: "Total"
+      },
+      pt: {
+        title: "Registro de Lead Telefônico",
+        subtitle: "Registre um novo lead via chamada",
+        leadName: "Nome do Lead",
+        phone: "Telefone",
+        summary: "Resumo da Ligação",
+        qualification: "Qualificação",
+        tourLabel: "Tour Agendado",
+        coldLabel: "Lead Frio",
+        hotLabel: "Lead Quente",
+        workLabel: "Work Information",
+        parentsLabel: "Pais Escola",
+        submitBtn: "Cadastrar Lead",
+        submitting: "Cadastrando...",
+        success: "✅ Lead cadastrado com sucesso!",
+        error: "❌ Erro ao cadastrar lead. Tente novamente.",
+        namePlaceholder: "Digite o nome do lead",
+        phonePlaceholder: "+5511999999999",
+        summaryPlaceholder: "Breve resumo da conversa...",
+        required: "Este campo é obrigatório",
+        todayLabel: "Hoje",
+        weekLabel: "Semana",
+        totalLabel: "Total"
+      }
+    };
+
+    let currentLang = localStorage.getItem('lang') || 'pt';
+
+    function t(key) {
+      return translations[currentLang]?.[key] || translations.pt[key] || key;
+    }
+
+    /* ── Update all text nodes ──────────── */
+    function updateTexts() {
+      document.querySelector('.title').textContent = t('title');
+      document.querySelector('.subtitle').textContent = t('subtitle');
+
+      // Labels with icons preserved
+      setLabelHtml('.leadNameLabel', '👤', t('leadName'), true);
+      setLabelHtml('.phoneLabel', '📱', t('phone'), true);
+      setLabelHtml('.summaryLabel', '📝', t('summary'), false);
+      setLabelHtml('.qualificationLabel', '🏷️', t('qualification'), true);
+
+      document.querySelector('.btn-text').textContent = t('submitBtn');
+      document.getElementById('leadName').placeholder = t('namePlaceholder');
+      document.getElementById('phone').placeholder = t('phonePlaceholder');
+      document.getElementById('summary').placeholder = t('summaryPlaceholder');
+      document.querySelector('.tourLabel').textContent = t('tourLabel');
+      document.querySelector('.coldLabel').textContent = t('coldLabel');
+      document.querySelector('.hotLabel').textContent = t('hotLabel');
+      document.querySelector('.workLabel').textContent = t('workLabel');
+      document.querySelector('.parentsLabel').textContent = t('parentsLabel');
+      document.querySelector('.todayLabel').textContent = t('todayLabel');
+      document.querySelector('.weekLabel').textContent = t('weekLabel');
+      document.querySelector('.totalLabel').textContent = t('totalLabel');
+    }
+
+    function setLabelHtml(selector, emoji, text, required) {
+      const el = document.querySelector(selector);
+      if (!el) return;
+      el.innerHTML = `<span class="icon-label">${emoji}</span> ${text} ${required ? '<span class="required">*</span>' : ''}`;
+    }
+
+    /* ── Language Switcher ─────────────── */
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentLang = btn.dataset.lang;
+        localStorage.setItem('lang', currentLang);
+        document.documentElement.lang = currentLang;
+        updateTexts();
+      });
+    });
+
+    // Set initial language
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    const initialBtn = document.querySelector(`.lang-btn[data-lang="${currentLang}"]`);
+    if (initialBtn) initialBtn.classList.add('active');
+    document.documentElement.lang = currentLang;
+    updateTexts();
+
+    /* ── Stats Counter (localStorage) ──── */
+    function getStats() {
+      try {
+        return JSON.parse(localStorage.getItem('leadStats') || '{}');
+      } catch { return {}; }
+    }
+
+    function updateStats() {
+      const stats = getStats();
+      const today = new Date().toISOString().slice(0, 10);
+      const weekStart = getWeekStart();
+
+      let todayCount = 0, weekCount = 0, totalCount = 0;
+      for (const [date, count] of Object.entries(stats)) {
+        totalCount += count;
+        if (date === today) todayCount += count;
+        if (date >= weekStart) weekCount += count;
+      }
+
+      animateCounter('statTodayVal', todayCount);
+      animateCounter('statWeekVal', weekCount);
+      animateCounter('statTotalVal', totalCount);
+    }
+
+    function incrementStats() {
+      const stats = getStats();
+      const today = new Date().toISOString().slice(0, 10);
+      stats[today] = (stats[today] || 0) + 1;
+      localStorage.setItem('leadStats', JSON.stringify(stats));
+      updateStats();
+    }
+
+    function getWeekStart() {
+      const d = new Date();
+      d.setDate(d.getDate() - d.getDay());
+      return d.toISOString().slice(0, 10);
+    }
+
+    function animateCounter(id, target) {
+      const el = document.getElementById(id);
+      const current = parseInt(el.textContent) || 0;
+      if (current === target) return;
+
+      const duration = 400;
+      const start = performance.now();
+
+      function step(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(current + (target - current) * eased);
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    updateStats();
+
+    /* ── Form Submission ───────────────── */
+    document.getElementById('leadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('leadName').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const summary = document.getElementById('summary').value.trim();
+      const qualification = document.querySelector('input[name="qualification"]:checked')?.value;
+
+      if (!name || !phone || !qualification) {
+        showAlert(t('required'), 'error');
+        return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.classList.add('loading');
+      document.querySelector('.btn-text').textContent = t('submitting');
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone, summary, qualification })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showAlert(t('success'), 'success');
+          document.getElementById('leadForm').reset();
+          incrementStats();
+        } else {
+          showAlert(data.error || t('error'), 'error');
+        }
+      } catch (err) {
+        showAlert(t('error'), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        document.querySelector('.btn-text').textContent = t('submitBtn');
+      }
+    });
+
+    function showAlert(msg, type) {
+      const alert = document.getElementById('alert');
+      alert.textContent = msg;
+      alert.className = 'alert ' + type;
+      // Auto-hide after 5s
+      setTimeout(() => { alert.className = 'alert'; }, 5000);
+    }
+  </script>
+</body>
+</html>

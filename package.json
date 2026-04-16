@@ -1,0 +1,12 @@
+{
+  "name": "babyland-lead-hub",
+  "version": "1.0.0",
+  "description": "Sistema de registro de leads telefônicos para Babyland Bilingual Academy",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "@vercel/node": "3.0.0"
+  }
+}
