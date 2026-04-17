@@ -171,14 +171,19 @@ export default async function handler(req, res) {
             }));
           }
 
-          // Estratégia 1: Busca por conversation_id
+          // Estratégia 1: Busca por Padrão de Título (Visto na Screenshot: "Conversation #544")
           let targetTask = Array.isArray(tasksList) 
-            ? tasksList.find(t => String(t.conversation_id) === String(conversationId))
+            ? tasksList.find(t => t.title && t.title.includes(`#${conversationId}`))
             : null;
 
-          // Estratégia 2 (Fallback): Busca por Nome do Lead no Título
+          // Estratégia 2 (Fallback): Busca por conversation_id (campo interno)
           if (!targetTask && Array.isArray(tasksList)) {
-            console.log(`[Kanban] Task não achada por ID. Buscando por nome "${name}"...`);
+            targetTask = tasksList.find(t => String(t.conversation_id) === String(conversationId));
+          }
+
+          // Estratégia 3 (Fallback): Busca por Nome do Lead no Título
+          if (!targetTask && Array.isArray(tasksList)) {
+            console.log(`[Kanban] Busca por padrão não achou. Tentando nome simples "${name}"...`);
             targetTask = tasksList.find(t => 
               t.title && t.title.toLowerCase().includes(name.toLowerCase())
             );
