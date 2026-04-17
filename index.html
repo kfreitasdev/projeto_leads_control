@@ -853,6 +853,8 @@
       btn.classList.add('loading');
       btnText.textContent = t('submitting');
 
+      console.log('[Form] Enviando lead...', { name, phone, summary_length: summary.length });
+
       try {
         const res = await fetch('/api/register', {
           method: 'POST',
