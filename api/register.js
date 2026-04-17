@@ -14,10 +14,18 @@ export default async function handler(req, res) {
   const CHATWOOT_ACCOUNT_ID = process.env.CHATWOOT_ACCOUNT_ID || '2';
   const INBOX_ID = process.env.INBOX_ID || '23';
 
+  if (!CHATWOOT_API_TOKEN) {
+    console.error('Missing CHATWOOT_API_TOKEN');
+    return res.status(500).json({ error: 'Server misconfigured: missing API token' });
+  }
+
   const headers = {
     'Content-Type': 'application/json',
     'api_access_token': CHATWOOT_API_TOKEN
   };
+
+  console.log('Starting lead registration:', { name, phone, qualification });
+  console.log('Config:', { CHATWOOT_BASE_URL, CHATWOOT_ACCOUNT_ID, INBOX_ID });
 
   try {
     let contactId = null;
@@ -109,7 +117,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('Error:', error.message);
+    return res.status(500).json({ error: 'Internal server error: ' + error.message });
   }
 }
