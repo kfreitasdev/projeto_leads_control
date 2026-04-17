@@ -630,6 +630,42 @@
           </button>
         </form>
 
+        <!-- Sucesso Section (Hidden by default) -->
+        <div id="successSection" class="hidden text-center animate-fade-in">
+          <div class="mb-6 inline-flex items-center justify-center w-20 h-20 bg-green-500/20 text-green-500 rounded-full">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold mb-2">Lead Registrado!</h2>
+          <p class="text-white/60 mb-6 font-primary">Contato e conversa criados com sucesso no Chatwoot.</p>
+          
+          <div id="kanbanStatus" class="bg-white/5 rounded-xl p-4 mb-6 text-left border border-white/10">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-white/40 font-primary">ID Conversa:</span>
+              <span id="displayConvId" class="font-mono text-pink-400">#---</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-white/40 font-primary">Status Kanban:</span>
+              <span id="displayKanbanStatus" class="text-sm font-medium font-primary">⏳ Aguardando...</span>
+            </div>
+          </div>
+
+          <button id="syncKanbanBtn" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 font-primary">
+            <span id="syncBtnText">FINALIZAR NO KANBAN</span>
+            <div id="syncLoader" class="hidden">
+              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          </button>
+
+          <button onclick="document.getElementById('successSection').classList.add('hidden'); document.getElementById('leadForm').classList.remove('hidden');" class="mt-4 text-sm text-white/40 hover:text-white transition-colors font-primary">
+            Registrar outro lead
+          </button>
+        </div>
+
         <div class="alert" id="alert" role="alert" aria-live="polite"></div>
       </div>
 
@@ -829,11 +865,12 @@
     /* ── Form Submission ───────────────── */
     document.getElementById('leadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      e.stopPropagation(); // Garantia extra contra recarregamento
+      e.stopPropagation();
 
       const name = document.getElementById('leadName').value.trim();
       const phone = document.getElementById('phone').value.trim();
       const summary = document.getElementById('summary').value.trim();
+      const formData = { name, phone, summary };
 
       if (!name || !phone) {
         showAlert(t('required'), 'error');
