@@ -1,55 +1,64 @@
 export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { name, phone, summary, qualification } = req.body;
-
-  if (!name || !phone || !qualification) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  const CHATWOOT_BASE_URL = (process.env.CHATWOOT_BASE_URL || 'https://contact.glowryia.com').replace(/\/$/, '');
-  const CHATWOOT_API_TOKEN = process.env.CHATWOOT_API_TOKEN || 'MVLHjvbssUzkX1WE24ToyBbA';
+  // ── Env vars (sem fallback de token) ──
+  const CHATWOOT_BASE_URL = (process.env.CHATWOOT_BASE_URL || '').replace(/\/$/, '');
+  const CHATWOOT_API_TOKEN = process.env.CHATWOOT_API_TOKEN;
   const CHATWOOT_ACCOUNT_ID = process.env.CHATWOOT_ACCOUNT_ID || '2';
   const INBOX_ID = process.env.INBOX_ID || '25';
 
-  console.log('API Token configured:', CHATWOOT_API_TOKEN ? 'YES' : 'NO');
-  console.log('Account ID:', CHATWOOT_ACCOUNT_ID);
-  console.log('Inbox ID:', INBOX_ID);
+  if (!CHATWOOT_BASE_URL || !CHATWOOT_API_TOKEN) {
+    console.error('Missing CHATWOOT_BASE_URL or CHATWOOT_API_TOKEN env vars');
+    return res.status(500).json({ error: 'Server misconfigured: missing Chatwoot credentials' });
+  }
+
+  // ── Validação de entrada ──
+  const { name, phone, summary, qualification } = req.body || {};
+
+  if (!name || !phone || !qualification) {
+    return res.status(400).json({ error: 'Missing required fields: name, phone, qualification' });
+  }
+
+  // Validação E.164 (ex: +5511999999999)
+  const e164Regex = /^\+[1-9]\d{6,14}$/;
+  if (!e164Regex.test(phone)) {
+    return res.status(400).json({ error: 'Invalid phone format. Use E.164 (e.g. +5511999999999)' });
+  }
 
   const headers = {
     'Content-Type': 'application/json',
     'api_access_token': CHATWOOT_API_TOKEN
   };
 
-  console.log('=== START ===');
-  console.log('BASE:', CHATWOOT_BASE_URL);
-  console.log('TOKEN:', CHATWOOT_API_TOKEN?.substring(0, 10) + '...');
-
   try {
+    // ── Step 1: Buscar contato por telefone ──
     let contactId = null;
 
     const searchUrl = `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts/search?q=${encodeURIComponent(phone)}`;
-    console.log('Search URL:', searchUrl);
-    
     const searchRes = await fetch(searchUrl, { headers });
 
     if (searchRes.ok) {
       const searchData = await searchRes.json();
-      console.log('Contact search STATUS:', searchRes.status);
-      console.log('Contact search FULL:', JSON.stringify(searchData));
-      if (searchData.payload && searchData.payload.length > 0) {
+      if (searchData.payload?.length > 0) {
         contactId = searchData.payload[0].id;
-        console.log('Found existing contact:', contactId);
       }
-    } else {
-      console.error('Contact search FAILED:', searchRes.status, await searchRes.text());
     }
 
+    // ── Step 2: Criar contato se não existe ──
     if (!contactId) {
       const createContactRes = await fetch(
-        `${CHATWOOT_BASE_URL}api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts`,
+        `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts`,
         {
           method: 'POST',
           headers,
@@ -61,68 +70,70 @@ export default async function handler(req, res) {
       );
 
       if (!createContactRes.ok) {
-        const err = await createContactRes.text();
-        console.error('Contact create failed:', createContactRes.status, err);
-        return res.status(500).json({ error: 'Failed to create contact', details: err });
+        const errText = await createContactRes.text();
+        console.error(`Contact creation failed [${createContactRes.status}]:`, errText);
+        return res.status(500).json({ error: 'Failed to create contact' });
       }
 
       const contactData = await createContactRes.json();
-      console.log('Contact created:', JSON.stringify(contactData));
-      contactId = contactData.payload?.id;
-      
+      contactId = contactData.payload?.contact?.id || contactData.payload?.id;
+
       if (!contactId) {
-        console.error('No contact ID in response:', contactData);
+        console.error('No contact ID in response');
         return res.status(500).json({ error: 'Failed to get contact ID from response' });
       }
     }
 
-    const conversationPayload = {
-      inbox_id: Number(INBOX_ID),
-      contact_id: Number(contactId)
-    };
-    console.log('Creating conversation - full URL:', `${CHATWOOT_BASE_URL}api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations`, conversationPayload);
-    
+    // ── Step 3: Criar conversa no inbox ──
     const conversationRes = await fetch(
-      `${CHATWOOT_BASE_URL}api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations`,
+      `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations`,
       {
         method: 'POST',
         headers,
-        body: JSON.stringify(conversationPayload)
+        body: JSON.stringify({
+          inbox_id: Number(INBOX_ID),
+          contact_id: Number(contactId)
+        })
       }
     );
 
     if (!conversationRes.ok) {
-      const err = await conversationRes.text();
-      console.error('Conversation create FAILED:', conversationRes.status, err);
-      return res.status(500).json({ error: 'Failed to create conversation', details: err });
+      const errText = await conversationRes.text();
+      console.error(`Conversation creation failed [${conversationRes.status}]:`, errText);
+      return res.status(500).json({ error: 'Failed to create conversation' });
     }
 
     const conversationData = await conversationRes.json();
-    console.log('Conversation response status:', conversationRes.status);
-    console.log('Conversation FULL response:', JSON.stringify(conversationData));
-    const conversationId = conversationData.payload?.id;
-    
+    const conversationId = conversationData.payload?.id || conversationData.id;
+
     if (!conversationId) {
-      console.error('No conversation ID in response:', conversationData);
+      console.error('No conversation ID in response');
       return res.status(500).json({ error: 'Failed to get conversation ID' });
     }
 
+    // ── Step 4: Inserir nota privada (com tratamento de erro) ──
+    let noteAdded = false;
     if (summary) {
-      await fetch(
-        `${CHATWOOT_BASE_URL}api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations/${conversationId}/messages`,
+      const noteRes = await fetch(
+        `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations/${conversationId}/messages`,
         {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            content: summary,
+            content: `📞 ${summary}`,
             private: true
           })
         }
       );
+      noteAdded = noteRes.ok;
+      if (!noteRes.ok) {
+        console.error(`Note creation failed [${noteRes.status}]`);
+      }
     }
 
-    await fetch(
-      `${CHATWOOT_BASE_URL}api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations/${conversationId}/labels`,
+    // ── Step 5: Aplicar label de qualificação (com tratamento de erro) ──
+    const labelRes = await fetch(
+      `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations/${conversationId}/labels`,
       {
         method: 'POST',
         headers,
@@ -132,15 +143,22 @@ export default async function handler(req, res) {
       }
     );
 
+    const labelApplied = labelRes.ok;
+    if (!labelRes.ok) {
+      console.error(`Label application failed [${labelRes.status}]`);
+    }
+
+    // ── Resposta de sucesso ──
     return res.status(200).json({
       success: true,
       contact_id: contactId,
-      conversation_id: conversationId
+      conversation_id: conversationId,
+      note_added: noteAdded,
+      label_applied: labelApplied
     });
 
   } catch (error) {
-    console.error('ERROR:', error.message);
-    console.error('Stack:', error.stack);
-    return res.status(500).json({ error: 'Internal server error: ' + error.message });
+    console.error('Unexpected error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
