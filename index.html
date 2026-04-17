@@ -103,8 +103,8 @@
     }
 
     .brand-logo {
-      width: 52px;
-      height: 52px;
+      width: 76px;
+      height: 76px;
       border-radius: var(--radius-md);
       object-fit: cover;
       border: 2px solid var(--gold);
@@ -132,51 +132,39 @@
     /* ── Language Selector (bandeiras) ──── */
     .lang-selector {
       display: flex;
-      gap: 6px;
-      background: var(--gold-pale);
-      padding: 5px;
-      border-radius: var(--radius-sm);
-      border: 1px solid rgba(245, 166, 35, 0.25);
+      gap: 10px;
+      align-items: center;
     }
 
     .lang-btn {
       background: none;
       border: none;
       cursor: pointer;
-      font-size: 20px;
-      padding: 4px 6px;
-      border-radius: 6px;
+      padding: 0;
       transition: all 0.25s ease;
-      line-height: 1;
-      position: relative;
+      opacity: 0.4;
+      line-height: 0;
     }
 
-    .lang-btn::after {
-      content: attr(data-code);
-      position: absolute;
-      bottom: -2px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 8px;
-      font-weight: 700;
-      font-family: var(--font-body);
-      color: var(--text-muted);
-      opacity: 0;
-      transition: opacity 0.2s ease;
+    .lang-btn img {
+      width: 32px;
+      height: 22px;
+      object-fit: cover;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
     .lang-btn:hover {
-      background: rgba(245, 166, 35, 0.15);
-      transform: scale(1.1);
-    }
-
-    .lang-btn.active {
-      background: var(--gold);
-      box-shadow: 0 2px 6px rgba(245, 166, 35, 0.35);
+      opacity: 0.8;
       transform: scale(1.05);
     }
 
-    .lang-btn.active::after { opacity: 1; color: white; }
+    .lang-btn.active {
+      opacity: 1;
+      transform: scale(1.1);
+      box-shadow: 0 0 0 2px var(--gold);
+      border-radius: 4px;
+    }
 
     /* ── Stats Cards (topo) ───────────────── */
     .stats-bar {
@@ -513,7 +501,7 @@
       .page-inner { padding: 20px 18px 24px; }
 
       .brand-name { font-size: 19px; }
-      .brand-logo { width: 44px; height: 44px; }
+      .brand-logo { width: 62px; height: 62px; }
 
       .stats-bar {
         grid-template-columns: repeat(3, 1fr);
@@ -574,9 +562,9 @@
           </div>
         </div>
         <div class="lang-selector">
-          <button class="lang-btn" data-lang="pt" data-code="PT" aria-label="Português" title="Português">🇧🇷</button>
-          <button class="lang-btn" data-lang="en" data-code="EN" aria-label="English" title="English">🇺🇸</button>
-          <button class="lang-btn" data-lang="es" data-code="ES" aria-label="Español" title="Español">🇪🇸</button>
+          <button class="lang-btn active" data-lang="pt" aria-label="Português" title="Português"><img src="https://flagcdn.com/br.svg" alt="BR"></button>
+          <button class="lang-btn" data-lang="en" aria-label="English" title="English"><img src="https://flagcdn.com/us.svg" alt="US"></button>
+          <button class="lang-btn" data-lang="es" aria-label="Español" title="Español"><img src="https://flagcdn.com/es.svg" alt="ES"></button>
         </div>
       </header>
 
@@ -624,7 +612,7 @@
               <span class="icon-label">📱</span>
               Telefone <span class="required">*</span>
             </label>
-            <input type="tel" id="phone" required placeholder="+5511999999999" aria-required="true">
+            <input type="tel" id="phone" required placeholder="Ex: +1 555-555-5555 ou +55 11 99999-9999" aria-required="true">
           </div>
 
           <div class="form-group">
@@ -688,7 +676,7 @@
 
     <!-- ── Footer ───────────────────────── -->
     <div class="footer">
-      <span class="footer-text">Powered by <span class="footer-brand">Babyland</span> Lead Hub</span>
+      <span class="footer-text">Powered by <span class="footer-brand">Glowryia</span></span>
     </div>
   </div>
 
@@ -712,7 +700,7 @@
         success: "✅ Lead registered successfully!",
         error: "❌ Error registering lead. Try again.",
         namePlaceholder: "Enter lead name",
-        phonePlaceholder: "+1234567890",
+        phonePlaceholder: "Ex: +1 555-555-5555",
         summaryPlaceholder: "Brief summary of the conversation...",
         required: "This field is required",
         todayLabel: "Today",
@@ -736,7 +724,7 @@
         success: "✅ ¡Lead registrado exitosamente!",
         error: "❌ Error al registrar lead. Intente de nuevo.",
         namePlaceholder: "Ingrese el nombre del lead",
-        phonePlaceholder: "+1234567890",
+        phonePlaceholder: "Ej: +1 555-555-5555",
         summaryPlaceholder: "Breve resumen de la conversación...",
         required: "Este campo es requerido",
         todayLabel: "Hoy",
@@ -760,7 +748,7 @@
         success: "✅ Lead cadastrado com sucesso!",
         error: "❌ Erro ao cadastrar lead. Tente novamente.",
         namePlaceholder: "Digite o nome do lead",
-        phonePlaceholder: "+5511999999999",
+        phonePlaceholder: "Ex: +1 555-555-5555 ou +55 11 99999-9999",
         summaryPlaceholder: "Breve resumo da conversa...",
         required: "Este campo é obrigatório",
         todayLabel: "Hoje",
