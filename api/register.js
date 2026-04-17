@@ -10,14 +10,13 @@ export default async function handler(req, res) {
   }
 
   const CHATWOOT_BASE_URL = process.env.CHATWOOT_BASE_URL || 'https://contact.glowryia.com/';
-  const CHATWOOT_API_TOKEN = process.env.CHATWOOT_API_TOKEN;
+  const CHATWOOT_API_TOKEN = process.env.CHATWOOT_API_TOKEN || 'MVLHjvbssUzkX1WE24ToyBbA';
   const CHATWOOT_ACCOUNT_ID = process.env.CHATWOOT_ACCOUNT_ID || '2';
   const INBOX_ID = process.env.INBOX_ID || '23';
 
-  if (!CHATWOOT_API_TOKEN) {
-    console.error('Missing CHATWOOT_API_TOKEN');
-    return res.status(500).json({ error: 'Server misconfigured: missing API token' });
-  }
+  console.log('API Token configured:', CHATWOOT_API_TOKEN ? 'YES' : 'NO');
+  console.log('Account ID:', CHATWOOT_ACCOUNT_ID);
+  console.log('Inbox ID:', INBOX_ID);
 
   const headers = {
     'Content-Type': 'application/json',
@@ -74,16 +73,19 @@ export default async function handler(req, res) {
       }
     }
 
+    const conversationPayload = {
+      inbox_id: parseInt(INBOX_ID),
+      contact_id: contactId,
+      source_id: String(phone)
+    };
+    console.log('Creating conversation with:', JSON.stringify(conversationPayload));
+    
     const conversationRes = await fetch(
       `${CHATWOOT_BASE_URL}api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations`,
       {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          inbox_id: INBOX_ID,
-          contact_id: contactId,
-          source_id: phone
-        })
+        body: JSON.stringify(conversationPayload)
       }
     );
 
@@ -94,7 +96,7 @@ export default async function handler(req, res) {
     }
 
     const conversationData = await conversationRes.json();
-    console.log('Conversation created:', JSON.stringify(conversationData));
+    console.log('Conversation API response:', JSON.stringify(conversationData));
     const conversationId = conversationData.payload?.id;
     
     if (!conversationId) {
