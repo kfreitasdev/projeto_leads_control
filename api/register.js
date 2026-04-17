@@ -36,12 +36,14 @@ export default async function handler(req, res) {
 
     if (searchRes.ok) {
       const searchData = await searchRes.json();
-      console.log('Contact search result:', JSON.stringify(searchData));
+      console.log('Contact search STATUS:', searchRes.status);
+      console.log('Contact search FULL:', JSON.stringify(searchData));
       if (searchData.payload && searchData.payload.length > 0) {
         contactId = searchData.payload[0].id;
+        console.log('Found existing contact:', contactId);
       }
     } else {
-      console.error('Contact search failed:', searchRes.status, await searchRes.text());
+      console.error('Contact search FAILED:', searchRes.status, await searchRes.text());
     }
 
     if (!contactId) {
@@ -74,10 +76,10 @@ export default async function handler(req, res) {
     }
 
     const conversationPayload = {
-      inbox_id: parseInt(INBOX_ID),
-      contact_id: contactId
+      inbox_id: Number(INBOX_ID),
+      contact_id: Number(contactId)
     };
-    console.log('Creating conversation with inbox:', INBOX_ID);
+    console.log('Creating conversation - full URL:', `${CHATWOOT_BASE_URL}api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations`, conversationPayload);
     
     const conversationRes = await fetch(
       `${CHATWOOT_BASE_URL}api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations`,
@@ -90,12 +92,13 @@ export default async function handler(req, res) {
 
     if (!conversationRes.ok) {
       const err = await conversationRes.text();
-      console.error('Conversation create failed:', conversationRes.status, err);
+      console.error('Conversation create FAILED:', conversationRes.status, err);
       return res.status(500).json({ error: 'Failed to create conversation', details: err });
     }
 
     const conversationData = await conversationRes.json();
-    console.log('Conversation API response:', JSON.stringify(conversationData));
+    console.log('Conversation response status:', conversationRes.status);
+    console.log('Conversation FULL response:', JSON.stringify(conversationData));
     const conversationId = conversationData.payload?.id;
     
     if (!conversationId) {
