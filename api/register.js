@@ -133,17 +133,18 @@ export default async function handler(req, res) {
 
     // ── Labels removidas. ──
 
-    // ── Step 5: Atualizar Kanban Task (Opcional - Requer KANBAN_BOARD_ID) ──
+    // ── Step 5: Atualizar Kanban Task (Opcional) ──
     const KANBAN_BOARD_ID = process.env.KANBAN_BOARD_ID;
     let kanbanUpdated = false;
 
     if (KANBAN_BOARD_ID && summary) {
+      console.log('[Kanban] Iniciando processo de atualização...');
+      
+      // Tentativa isolada para não quebrar o fluxo principal
       try {
-        console.log(`Starting Kanban update for conversation ${conversationId} on board ${KANBAN_BOARD_ID}`);
-        // Reduzindo o delay drásticamente para evitar timeout (504) da Vercel
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Delay mínimo para garantir que o card foi criado pela automação do Chatwoot
+        await new Promise(r => setTimeout(r, 800));
 
-        // Busca a tarefa vinculada à conversa
         const tasksRes = await fetch(
           `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks?conversation_id=${conversationId}`,
           { headers }
@@ -151,39 +152,27 @@ export default async function handler(req, res) {
 
         if (tasksRes.ok) {
           const tasksData = await tasksRes.json();
-          // Certifique-se de acessar a lista de tarefas corretamente dependendo de como a payload do fazer.ai retorna
-          // Ex: { payload: [ ...tasks ] } ou apenas [ ...tasks ]
           const tasksList = tasksData.payload || tasksData;
           
-          if (tasksList && tasksList.length > 0) {
+          if (Array.isArray(tasksList) && tasksList.length > 0) {
             const taskCardId = tasksList[0].id;
+            console.log(`[Kanban] Card encontrado: ${taskCardId}. Atualizando...`);
 
-            // Atualiza a Task injetando o resumo
-            const updateTaskRes = await fetch(
+            const updateRes = await fetch(
               `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks/${taskCardId}`,
               {
                 method: 'PATCH',
                 headers,
-                body: JSON.stringify({
-                  description: `📝 Resumo de Lead:\n${summary}`
-                })
+                body: JSON.stringify({ description: `📝 Resumo do Lead:\n${summary}` })
               }
             );
-
-            kanbanUpdated = updateTaskRes.ok;
-            if (!kanbanUpdated) {
-               console.error(`Kanban Task update failed [${updateTaskRes.status}]`);
-            } else {
-               console.log(`Kanban Task ${taskCardId} successfully updated with summary.`);
-            }
+            kanbanUpdated = updateRes.ok;
           } else {
-            console.warn(`No Kanban task found for conversation ${conversationId} on board ${KANBAN_BOARD_ID}. Autmomation might be delayed.`);
+            console.warn('[Kanban] Card não encontrado para a conversa:', conversationId);
           }
-        } else {
-           console.error(`Failed to fetch kanban tasks [${tasksRes.status}]`);
         }
-      } catch (err) {
-         console.error('Error updating Kanban Task:', err.message);
+      } catch (kanbanErr) {
+        console.error('[Kanban] Erro silencioso (ignorado para não quebrar o lead):', kanbanErr.message);
       }
     }
 
