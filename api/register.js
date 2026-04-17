@@ -14,30 +14,19 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // ── Env vars (sem fallback de token) ──
   const CHATWOOT_BASE_URL = (process.env.CHATWOOT_BASE_URL || '').replace(/\/$/, '');
   const CHATWOOT_API_TOKEN = process.env.CHATWOOT_API_TOKEN;
   const CHATWOOT_ACCOUNT_ID = process.env.CHATWOOT_ACCOUNT_ID || '2';
   const INBOX_ID = process.env.INBOX_ID || '25';
+  const KANBAN_BOARD_ID = process.env.KANBAN_BOARD_ID;
 
   if (!CHATWOOT_BASE_URL || !CHATWOOT_API_TOKEN) {
-    console.error('Missing CHATWOOT_BASE_URL or CHATWOOT_API_TOKEN env vars');
     return res.status(500).json({ error: 'Server misconfigured: missing Chatwoot credentials' });
   }
 
-  // ── Validação de entrada ──
   const { name, phone, summary } = req.body || {};
-
-  console.log(`[API] Recebido lead: ${name} (${phone})`);
-
   if (!name || !phone) {
     return res.status(400).json({ error: 'Missing required fields: name, phone' });
-  }
-
-  // Validação E.164 (ex: +5511999999999)
-  const e164Regex = /^\+[1-9]\d{6,14}$/;
-  if (!e164Regex.test(phone)) {
-    return res.status(400).json({ error: 'Invalid phone format. Use E.164 (e.g. +5511999999999)' });
   }
 
   const headers = {
@@ -45,195 +34,108 @@ export default async function handler(req, res) {
     'api_access_token': CHATWOOT_API_TOKEN
   };
 
+  const kanbanLogs = [];
+
   try {
-    // ── Step 1: Buscar contato por telefone ──
+    // 1. Buscar/Criar Contato
     let contactId = null;
-
-    const searchUrl = `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts/search?q=${encodeURIComponent(phone)}`;
-    const searchRes = await fetch(searchUrl, { headers });
-
+    const searchRes = await fetch(`${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts/search?q=${encodeURIComponent(phone)}`, { headers });
     if (searchRes.ok) {
       const searchData = await searchRes.json();
-      if (searchData.payload?.length > 0) {
-        contactId = searchData.payload[0].id;
-      }
+      if (searchData.payload?.length > 0) contactId = searchData.payload[0].id;
     }
 
-    // ── Step 2: Criar contato se não existe ──
     if (!contactId) {
-      const createContactRes = await fetch(
-        `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            name: name,
-            phone_number: phone
-          })
-        }
-      );
-
-      if (!createContactRes.ok) {
-        const errText = await createContactRes.text();
-        console.error(`Contact creation failed [${createContactRes.status}]:`, errText);
-        return res.status(500).json({ error: 'Failed to create contact' });
-      }
-
-      const contactData = await createContactRes.json();
-      contactId = contactData.payload?.contact?.id || contactData.payload?.id;
-
-      if (!contactId) {
-        console.error('No contact ID in response');
-        return res.status(500).json({ error: 'Failed to get contact ID from response' });
-      }
-    }
-
-    // ── Step 3: Criar conversa no inbox ──
-    const conversationRes = await fetch(
-      `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations`,
-      {
+      const createRes = await fetch(`${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          inbox_id: Number(INBOX_ID),
-          contact_id: Number(contactId)
-        })
-      }
-    );
-
-    if (!conversationRes.ok) {
-      const errText = await conversationRes.text();
-      console.error(`Conversation creation failed [${conversationRes.status}]:`, errText);
-      return res.status(500).json({ error: 'Failed to create conversation' });
+        body: JSON.stringify({ name, phone_number: phone })
+      });
+      const cData = await createRes.json();
+      contactId = cData.payload?.contact?.id || cData.payload?.id;
     }
 
-    const conversationData = await conversationRes.json();
-    const conversationId = conversationData.payload?.id || conversationData.id;
+    // 2. Criar Conversa
+    const convRes = await fetch(`${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ inbox_id: Number(INBOX_ID), contact_id: Number(contactId) })
+    });
+    const convData = await convRes.json();
+    const conversationId = convData.payload?.id || convData.id;
 
-    if (!conversationId) {
-      console.error('No conversation ID in response');
-      return res.status(500).json({ error: 'Failed to get conversation ID' });
+    // 3. Nota Privada
+    if (conversationId && summary) {
+      await fetch(`${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ content: `📞 ${summary}`, private: true })
+      });
     }
 
-    // ── Step 4: Inserir nota privada (com tratamento de erro) ──
-    let noteAdded = false;
-    if (summary) {
-      const noteRes = await fetch(
-        `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations/${conversationId}/messages`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            content: `📞 ${summary}`,
-            private: true
-          })
-        }
-      );
-      noteAdded = noteRes.ok;
-      if (!noteRes.ok) {
-        console.error(`Note creation failed [${noteRes.status}]`);
-      }
-    }
-
-    // ── Passo Final: Atualizar Kanban Task (Opcional - Requer KANBAN_BOARD_ID) ──
-    const KANBAN_BOARD_ID = process.env.KANBAN_BOARD_ID;
-    let kanbanUpdated = false;
-
-    if (KANBAN_BOARD_ID && summary) {
-      console.log(`[Kanban] Board ID: ${KANBAN_BOARD_ID}. Iniciando busca por card da Conv #${conversationId}...`);
-      
-      const retryDelays = [3000, 3000, 4000]; // Delays entre tentativas (total 10s)
+    // 4. Integração Kanban (Diagnóstico Ativado)
+    if (KANBAN_BOARD_ID && conversationId && summary) {
+      kanbanLogs.push(`Iniciando busca no board ${KANBAN_BOARD_ID} para Conv #${conversationId}`);
+      const retryDelays = [3000, 3000, 4000];
       
       for (let i = 0; i < retryDelays.length; i++) {
-        try {
-          console.log(`[Kanban] Tentativa ${i + 1} de ${retryDelays.length}... aguardando ${retryDelays[i]}ms`);
-          await new Promise(resolve => setTimeout(resolve, retryDelays[i]));
+        kanbanLogs.push(`Tentativa ${i+1}/${retryDelays.length} (Aguardando ${retryDelays[i]}ms)`);
+        await new Promise(r => setTimeout(r, retryDelays[i]));
 
-          // Buscamos todas as tasks do board para encontrar a nossa
-          const listUrl = `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks`;
-          const listRes = await fetch(listUrl, { headers });
+        const listUrl = `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks`;
+        const listRes = await fetch(listUrl, { headers });
+        
+        if (!listRes.ok) {
+          kanbanLogs.push(`Erro ao listar: ${listRes.status}`);
+          continue;
+        }
+
+        const tasksData = await listRes.json();
+        const tasksList = tasksData.payload || tasksData;
+
+        if (Array.isArray(tasksList)) {
+          kanbanLogs.push(`Encontradas ${tasksList.length} tasks.`);
           
-          if (!listRes.ok) {
-            console.warn(`[Kanban] Falha ao listar tasks [${listRes.status}] na tentativa ${i + 1}`);
-            continue;
-          }
-
-          const tasksData = await listRes.json();
-          const tasksList = tasksData.payload || tasksData;
-
-          if (Array.isArray(tasksList) && tasksList.length > 0 && i === 0) {
-            // Logamos a estrutura da primeira task encontrada para debug (apenas na primeira tentativa)
-            console.log('[Kanban] Debug - Estrutura da Task:', JSON.stringify({
-              id: tasksList[0].id,
-              title: tasksList[0].title,
-              conv_id: tasksList[0].conversation_id,
-              keys: Object.keys(tasksList[0])
-            }));
-          }
-
-          // Estratégia 1: Busca por Padrão de Título (Visto na Screenshot: "Conversation #544")
-          let targetTask = Array.isArray(tasksList) 
-            ? tasksList.find(t => t.title && t.title.includes(`#${conversationId}`))
-            : null;
-
-          // Estratégia 2 (Fallback): Busca por conversation_id (campo interno)
-          if (!targetTask && Array.isArray(tasksList)) {
+          // Busca precisa por padrão de título vindo do Chatwoot
+          let targetTask = tasksList.find(t => t.title && t.title.includes(`#${conversationId}`));
+          
+          if (!targetTask) {
             targetTask = tasksList.find(t => String(t.conversation_id) === String(conversationId));
           }
 
-          // Estratégia 3 (Fallback): Busca por Nome do Lead no Título
-          if (!targetTask && Array.isArray(tasksList)) {
-            console.log(`[Kanban] Busca por padrão não achou. Tentando nome simples "${name}"...`);
-            targetTask = tasksList.find(t => 
-              t.title && t.title.toLowerCase().includes(name.toLowerCase())
-            );
-          }
-
           if (targetTask) {
-            console.log(`[Kanban] Task encontrada! ID: ${targetTask.id} (${targetTask.title}). Atualizando...`);
-            const updateRes = await fetch(
-              `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks/${targetTask.id}`,
-              {
-                method: 'PATCH',
-                headers,
-                body: JSON.stringify({
-                  description: `📝 Resumo de Lead:\n\n${summary}\n\n---\nEnvio via Babyland Hub`
-                })
-              }
-            );
-
-            if (updateRes.ok) {
-              console.log(`[Kanban] Task ${targetTask.id} atualizada com sucesso.`);
-              kanbanUpdated = true;
-              break; // Sucesso! Sai do loop.
+            kanbanLogs.push(`Card achado: ID ${targetTask.id} ("${targetTask.title}")`);
+            const upRes = await fetch(`${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks/${targetTask.id}`, {
+              method: 'PATCH',
+              headers,
+              body: JSON.stringify({ description: `📝 Resumo de Lead:\n\n${summary}\n\n---\nEnvio via Babyland Hub` })
+            });
+            
+            if (upRes.ok) {
+              kanbanLogs.push('✅ Sucesso: Card atualizado!');
+              break;
             } else {
-              const errTxt = await updateRes.text();
-              console.error(`[Kanban] Erro ao atualizar [${updateRes.status}]:`, errTxt);
+              const err = await upRes.text();
+              kanbanLogs.push(`❌ Erro no PATCH [${upRes.status}]: ${err.substring(0, 50)}`);
             }
           } else {
-            console.log(`[Kanban] Task ainda não encontrada para a conversa ${conversationId}.`);
+            kanbanLogs.push(`Card #${conversationId} não encontrado.`);
+            if (i === retryDelays.length - 1 && tasksList.length > 0) {
+              kanbanLogs.push(`Exemplos de cards que vi: ${tasksList.slice(0, 2).map(t => t.title).join(' | ')}`);
+            }
           }
-        } catch (err) {
-          console.error(`[Kanban] Erro na tentativa ${i + 1}:`, err.message);
         }
-      }
-
-      if (!kanbanUpdated) {
-        console.warn(`[Kanban] Não foi possível atualizar o card após ${retryDelays.length} tentativas.`);
       }
     }
 
-    // ── Resposta de sucesso ──
     return res.status(200).json({
       success: true,
-      contact_id: contactId,
       conversation_id: conversationId,
-      note_added: noteAdded,
-      kanban_updated: kanbanUpdated
+      kanban_report: kanbanLogs
     });
 
   } catch (error) {
-    console.error('Unexpected error:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('[Fatal Error]', error);
+    return res.status(500).json({ success: false, error: error.message, kanban_report: kanbanLogs });
   }
 }
