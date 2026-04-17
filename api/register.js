@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   const CHATWOOT_BASE_URL = process.env.CHATWOOT_BASE_URL || 'https://contact.glowryia.com/';
   const CHATWOOT_API_TOKEN = process.env.CHATWOOT_API_TOKEN || 'MVLHjvbssUzkX1WE24ToyBbA';
   const CHATWOOT_ACCOUNT_ID = process.env.CHATWOOT_ACCOUNT_ID || '2';
-  const INBOX_ID = process.env.INBOX_ID || '23';
+  const INBOX_ID = process.env.INBOX_ID || '14';
 
   console.log('API Token configured:', CHATWOOT_API_TOKEN ? 'YES' : 'NO');
   console.log('Account ID:', CHATWOOT_ACCOUNT_ID);
@@ -75,10 +75,9 @@ export default async function handler(req, res) {
 
     const conversationPayload = {
       inbox_id: parseInt(INBOX_ID),
-      contact_id: contactId,
-      source_id: String(phone)
+      contact_id: contactId
     };
-    console.log('Creating conversation with:', JSON.stringify(conversationPayload));
+    console.log('Creating conversation with inbox:', INBOX_ID);
     
     const conversationRes = await fetch(
       `${CHATWOOT_BASE_URL}api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations`,
