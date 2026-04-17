@@ -37,9 +37,12 @@ export default async function handler(req, res) {
 
     if (searchRes.ok) {
       const searchData = await searchRes.json();
+      console.log('Contact search result:', JSON.stringify(searchData));
       if (searchData.payload && searchData.payload.length > 0) {
         contactId = searchData.payload[0].id;
       }
+    } else {
+      console.error('Contact search failed:', searchRes.status, await searchRes.text());
     }
 
     if (!contactId) {
@@ -57,11 +60,18 @@ export default async function handler(req, res) {
 
       if (!createContactRes.ok) {
         const err = await createContactRes.text();
+        console.error('Contact create failed:', createContactRes.status, err);
         return res.status(500).json({ error: 'Failed to create contact', details: err });
       }
 
       const contactData = await createContactRes.json();
-      contactId = contactData.payload.id;
+      console.log('Contact created:', JSON.stringify(contactData));
+      contactId = contactData.payload?.id;
+      
+      if (!contactId) {
+        console.error('No contact ID in response:', contactData);
+        return res.status(500).json({ error: 'Failed to get contact ID from response' });
+      }
     }
 
     const conversationRes = await fetch(
@@ -79,11 +89,18 @@ export default async function handler(req, res) {
 
     if (!conversationRes.ok) {
       const err = await conversationRes.text();
+      console.error('Conversation create failed:', conversationRes.status, err);
       return res.status(500).json({ error: 'Failed to create conversation', details: err });
     }
 
     const conversationData = await conversationRes.json();
-    const conversationId = conversationData.payload.id;
+    console.log('Conversation created:', JSON.stringify(conversationData));
+    const conversationId = conversationData.payload?.id;
+    
+    if (!conversationId) {
+      console.error('No conversation ID in response:', conversationData);
+      return res.status(500).json({ error: 'Failed to get conversation ID' });
+    }
 
     if (summary) {
       await fetch(
