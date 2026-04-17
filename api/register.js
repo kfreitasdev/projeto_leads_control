@@ -24,10 +24,10 @@ export default async function handler(req, res) {
   }
 
   // ── Validação de entrada ──
-  const { name, phone, summary, qualification } = req.body || {};
+  const { name, phone, summary } = req.body || {};
 
-  if (!name || !phone || !qualification) {
-    return res.status(400).json({ error: 'Missing required fields: name, phone, qualification' });
+  if (!name || !phone) {
+    return res.status(400).json({ error: 'Missing required fields: name, phone' });
   }
 
   // Validação E.164 (ex: +5511999999999)
@@ -131,30 +131,14 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── Step 5: Aplicar label de qualificação (com tratamento de erro) ──
-    const labelRes = await fetch(
-      `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/conversations/${conversationId}/labels`,
-      {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          labels: [qualification]
-        })
-      }
-    );
-
-    const labelApplied = labelRes.ok;
-    if (!labelRes.ok) {
-      console.error(`Label application failed [${labelRes.status}]`);
-    }
+    // Labels removidas.
 
     // ── Resposta de sucesso ──
     return res.status(200).json({
       success: true,
       contact_id: contactId,
       conversation_id: conversationId,
-      note_added: noteAdded,
-      label_applied: labelApplied
+      note_added: noteAdded
     });
 
   } catch (error) {

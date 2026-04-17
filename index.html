@@ -623,45 +623,6 @@
             <textarea id="summary" placeholder="Breve resumo da conversa..."></textarea>
           </div>
 
-          <div class="form-group" style="display: none;">
-            <label class="qualificationLabel">
-              <span class="icon-label">🏷️</span>
-              Qualificação <span class="required">*</span>
-            </label>
-            <div class="radio-group" id="qualification" role="radiogroup">
-              <label class="radio-option">
-                <input type="radio" name="qualification" value="lead-frio" checked>
-                <span class="radio-dot"></span>
-                <span class="chip-emoji">❄️</span>
-                <span class="coldLabel">Lead Frio</span>
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="qualification" value="lead-quente">
-                <span class="radio-dot"></span>
-                <span class="chip-emoji">🔥</span>
-                <span class="hotLabel">Lead Quente</span>
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="qualification" value="tour-agendado">
-                <span class="radio-dot"></span>
-                <span class="chip-emoji">🗓️</span>
-                <span class="tourLabel">Tour Agendado</span>
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="qualification" value="work-information">
-                <span class="radio-dot"></span>
-                <span class="chip-emoji">💼</span>
-                <span class="workLabel">Work Information</span>
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="qualification" value="pais-escola">
-                <span class="radio-dot"></span>
-                <span class="chip-emoji">🏫</span>
-                <span class="parentsLabel">Pais Escola</span>
-              </label>
-            </div>
-          </div>
-
           <button type="submit" class="btn-submit submitBtn" id="submitBtn">
             <span class="btn-icon">📤</span>
             <span class="spinner"></span>
@@ -877,9 +838,8 @@
       const name = document.getElementById('leadName').value.trim();
       const phone = document.getElementById('phone').value.trim();
       const summary = document.getElementById('summary').value.trim();
-      const qualification = document.querySelector('input[name="qualification"]:checked')?.value;
 
-      if (!name || !phone || !qualification) {
+      if (!name || !phone) {
         showAlert(t('required'), 'error');
         return;
       }
@@ -893,7 +853,7 @@
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, phone, summary, qualification })
+          body: JSON.stringify({ name, phone, summary })
         });
 
         const data = await res.json();
