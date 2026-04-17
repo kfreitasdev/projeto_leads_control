@@ -139,8 +139,9 @@ export default async function handler(req, res) {
 
     if (KANBAN_BOARD_ID && summary) {
       try {
-        // Como a tarefa é criada por automação (em background), damos um pequeno delay para garantir que ela exista
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log(`Starting Kanban update for conversation ${conversationId} on board ${KANBAN_BOARD_ID}`);
+        // Reduzindo o delay drásticamente para evitar timeout (504) da Vercel
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         // Busca a tarefa vinculada à conversa
         const tasksRes = await fetch(
