@@ -161,20 +161,38 @@ export default async function handler(req, res) {
           const tasksData = await listRes.json();
           const tasksList = tasksData.payload || tasksData;
 
-          // Procuramos a task que tenha o conversation_id correspondente
-          const targetTask = Array.isArray(tasksList) 
+          if (Array.isArray(tasksList) && tasksList.length > 0 && i === 0) {
+            // Logamos a estrutura da primeira task encontrada para debug (apenas na primeira tentativa)
+            console.log('[Kanban] Debug - Estrutura da Task:', JSON.stringify({
+              id: tasksList[0].id,
+              title: tasksList[0].title,
+              conv_id: tasksList[0].conversation_id,
+              keys: Object.keys(tasksList[0])
+            }));
+          }
+
+          // Estratégia 1: Busca por conversation_id
+          let targetTask = Array.isArray(tasksList) 
             ? tasksList.find(t => String(t.conversation_id) === String(conversationId))
             : null;
 
+          // Estratégia 2 (Fallback): Busca por Nome do Lead no Título
+          if (!targetTask && Array.isArray(tasksList)) {
+            console.log(`[Kanban] Task não achada por ID. Buscando por nome "${name}"...`);
+            targetTask = tasksList.find(t => 
+              t.title && t.title.toLowerCase().includes(name.toLowerCase())
+            );
+          }
+
           if (targetTask) {
-            console.log(`[Kanban] Task encontrada! ID: ${targetTask.id}. Atualizando descrição...`);
+            console.log(`[Kanban] Task encontrada! ID: ${targetTask.id} (${targetTask.title}). Atualizando...`);
             const updateRes = await fetch(
               `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks/${targetTask.id}`,
               {
                 method: 'PATCH',
                 headers,
                 body: JSON.stringify({
-                  description: `📝 Resumo de Lead:\n\n${summary}\n\n---`
+                  description: `📝 Resumo de Lead:\n\n${summary}\n\n---\nEnvio via Babyland Hub`
                 })
               }
             );
