@@ -23,16 +23,17 @@ export default async function handler(req, res) {
     'api_access_token': CHATWOOT_API_TOKEN
   };
 
-  console.log('=== START Lead Registration ===');
-  console.log('BASE URL:', CHATWOOT_BASE_URL);
+  console.log('=== START ===');
+  console.log('BASE:', CHATWOOT_BASE_URL);
+  console.log('TOKEN:', CHATWOOT_API_TOKEN?.substring(0, 10) + '...');
 
   try {
     let contactId = null;
 
-    const searchRes = await fetch(
-      `${CHATWOOT_BASE_URL}api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts/search?q=${encodeURIComponent(phone)}`,
-      { headers }
-    );
+    const searchUrl = `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/contacts/search?q=${encodeURIComponent(phone)}`;
+    console.log('Search URL:', searchUrl);
+    
+    const searchRes = await fetch(searchUrl, { headers });
 
     if (searchRes.ok) {
       const searchData = await searchRes.json();
@@ -138,7 +139,8 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('ERROR:', error.message);
+    console.error('Stack:', error.stack);
     return res.status(500).json({ error: 'Internal server error: ' + error.message });
   }
 }
