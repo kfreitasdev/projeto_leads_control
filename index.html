@@ -834,6 +834,7 @@
     /* ── Form Submission ───────────────── */
     document.getElementById('leadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      e.stopPropagation(); // Garantia extra contra recarregamento
 
       const name = document.getElementById('leadName').value.trim();
       const phone = document.getElementById('phone').value.trim();
@@ -845,9 +846,12 @@
       }
 
       const btn = document.getElementById('submitBtn');
+      const btnText = document.querySelector('.btn-text');
+      const originalBtnText = btnText.textContent;
+
       btn.disabled = true;
       btn.classList.add('loading');
-      document.querySelector('.btn-text').textContent = t('submitting');
+      btnText.textContent = t('submitting');
 
       try {
         const res = await fetch('/api/register', {
@@ -856,21 +860,23 @@
           body: JSON.stringify({ name, phone, summary })
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({ error: 'Resposta inválida do servidor.' }));
 
         if (res.ok) {
           showAlert(t('success'), 'success');
           document.getElementById('leadForm').reset();
           incrementStats();
         } else {
+          console.error('[API Error]', data);
           showAlert(data.error || t('error'), 'error');
         }
       } catch (err) {
+        console.error('[Fetch Error]', err);
         showAlert(t('error'), 'error');
       } finally {
         btn.disabled = false;
         btn.classList.remove('loading');
-        document.querySelector('.btn-text').textContent = t('submitBtn');
+        btnText.textContent = originalBtnText;
       }
     });
 
