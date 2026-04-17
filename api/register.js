@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const CHATWOOT_BASE_URL = process.env.CHATWOOT_BASE_URL || 'https://contact.glowryia.com/';
+  const CHATWOOT_BASE_URL = (process.env.CHATWOOT_BASE_URL || 'https://contact.glowryia.com').replace(/\/$/, '');
   const CHATWOOT_API_TOKEN = process.env.CHATWOOT_API_TOKEN || 'MVLHjvbssUzkX1WE24ToyBbA';
   const CHATWOOT_ACCOUNT_ID = process.env.CHATWOOT_ACCOUNT_ID || '2';
   const INBOX_ID = process.env.INBOX_ID || '25';
@@ -23,8 +23,8 @@ export default async function handler(req, res) {
     'api_access_token': CHATWOOT_API_TOKEN
   };
 
-  console.log('Starting lead registration:', { name, phone, qualification });
-  console.log('Config:', { CHATWOOT_BASE_URL, CHATWOOT_ACCOUNT_ID, INBOX_ID });
+  console.log('=== START Lead Registration ===');
+  console.log('BASE URL:', CHATWOOT_BASE_URL);
 
   try {
     let contactId = null;
