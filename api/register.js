@@ -131,14 +131,68 @@ export default async function handler(req, res) {
       }
     }
 
-    // Labels removidas.
+    // ── Labels removidas. ──
+
+    // ── Step 5: Atualizar Kanban Task (Opcional - Requer KANBAN_BOARD_ID) ──
+    const KANBAN_BOARD_ID = process.env.KANBAN_BOARD_ID;
+    let kanbanUpdated = false;
+
+    if (KANBAN_BOARD_ID && summary) {
+      try {
+        // Como a tarefa é criada por automação (em background), damos um pequeno delay para garantir que ela exista
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Busca a tarefa vinculada à conversa
+        const tasksRes = await fetch(
+          `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks?conversation_id=${conversationId}`,
+          { headers }
+        );
+
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          // Certifique-se de acessar a lista de tarefas corretamente dependendo de como a payload do fazer.ai retorna
+          // Ex: { payload: [ ...tasks ] } ou apenas [ ...tasks ]
+          const tasksList = tasksData.payload || tasksData;
+          
+          if (tasksList && tasksList.length > 0) {
+            const taskCardId = tasksList[0].id;
+
+            // Atualiza a Task injetando o resumo
+            const updateTaskRes = await fetch(
+              `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks/${taskCardId}`,
+              {
+                method: 'PATCH',
+                headers,
+                body: JSON.stringify({
+                  description: `📝 Resumo de Lead:\n${summary}`
+                })
+              }
+            );
+
+            kanbanUpdated = updateTaskRes.ok;
+            if (!kanbanUpdated) {
+               console.error(`Kanban Task update failed [${updateTaskRes.status}]`);
+            } else {
+               console.log(`Kanban Task ${taskCardId} successfully updated with summary.`);
+            }
+          } else {
+            console.warn(`No Kanban task found for conversation ${conversationId} on board ${KANBAN_BOARD_ID}. Autmomation might be delayed.`);
+          }
+        } else {
+           console.error(`Failed to fetch kanban tasks [${tasksRes.status}]`);
+        }
+      } catch (err) {
+         console.error('Error updating Kanban Task:', err.message);
+      }
+    }
 
     // ── Resposta de sucesso ──
     return res.status(200).json({
       success: true,
       contact_id: contactId,
       conversation_id: conversationId,
-      note_added: noteAdded
+      note_added: noteAdded,
+      kanban_updated: kanbanUpdated
     });
 
   } catch (error) {
