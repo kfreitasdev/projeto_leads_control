@@ -140,53 +140,64 @@ export default async function handler(req, res) {
     let kanbanUpdated = false;
 
     if (KANBAN_BOARD_ID && summary) {
-      console.log(`[Kanban] Board ID detected: ${KANBAN_BOARD_ID}. Iniciando busca de task para Conv #${conversationId}...`);
-      try {
-        // Delay para garantir que a automação do Chatwoot criou o card
-        await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log(`[Kanban] Board ID: ${KANBAN_BOARD_ID}. Iniciando busca por card da Conv #${conversationId}...`);
+      
+      const retryDelays = [3000, 3000, 4000]; // Delays entre tentativas (total 10s)
+      
+      for (let i = 0; i < retryDelays.length; i++) {
+        try {
+          console.log(`[Kanban] Tentativa ${i + 1} de ${retryDelays.length}... aguardando ${retryDelays[i]}ms`);
+          await new Promise(resolve => setTimeout(resolve, retryDelays[i]));
 
-        const searchUrl = `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks?conversation_id=${conversationId}`;
-        const tasksRes = await fetch(searchUrl, { headers });
-
-        if (tasksRes.ok) {
-          const tasksData = await tasksRes.json();
-          // Normaliza a resposta (array direto ou payload)
-          const tasksList = tasksData.payload || tasksData;
+          // Buscamos todas as tasks do board para encontrar a nossa
+          const listUrl = `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks`;
+          const listRes = await fetch(listUrl, { headers });
           
-          if (Array.isArray(tasksList) && tasksList.length > 0) {
-            const taskCardId = tasksList[0].id;
-            console.log(`[Kanban] Task encontrada! ID: ${taskCardId}. Atualizando descrição...`);
+          if (!listRes.ok) {
+            console.warn(`[Kanban] Falha ao listar tasks [${listRes.status}] na tentativa ${i + 1}`);
+            continue;
+          }
 
-            const updateTaskRes = await fetch(
-              `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks/${taskCardId}`,
+          const tasksData = await listRes.json();
+          const tasksList = tasksData.payload || tasksData;
+
+          // Procuramos a task que tenha o conversation_id correspondente
+          const targetTask = Array.isArray(tasksList) 
+            ? tasksList.find(t => String(t.conversation_id) === String(conversationId))
+            : null;
+
+          if (targetTask) {
+            console.log(`[Kanban] Task encontrada! ID: ${targetTask.id}. Atualizando descrição...`);
+            const updateRes = await fetch(
+              `${CHATWOOT_BASE_URL}/api/v1/accounts/${CHATWOOT_ACCOUNT_ID}/kanban_boards/${KANBAN_BOARD_ID}/kanban_tasks/${targetTask.id}`,
               {
                 method: 'PATCH',
                 headers,
                 body: JSON.stringify({
-                  description: `📝 Resumo de Lead:\n${summary}`
+                  description: `📝 Resumo de Lead:\n\n${summary}\n\n---`
                 })
               }
             );
 
-            kanbanUpdated = updateTaskRes.ok;
-            if (kanbanUpdated) {
-               console.log(`[Kanban] Task ${taskCardId} atualizada com sucesso.`);
+            if (updateRes.ok) {
+              console.log(`[Kanban] Task ${targetTask.id} atualizada com sucesso.`);
+              kanbanUpdated = true;
+              break; // Sucesso! Sai do loop.
             } else {
-               const errTxt = await updateTaskRes.text();
-               console.error(`[Kanban] Falha ao atualizar card [${updateTaskRes.status}]:`, errTxt);
+              const errTxt = await updateRes.text();
+              console.error(`[Kanban] Erro ao atualizar [${updateRes.status}]:`, errTxt);
             }
           } else {
-            console.warn(`[Kanban] Nenhuma task encontrada para a conversa ${conversationId} no quadro ${KANBAN_BOARD_ID}.`);
+            console.log(`[Kanban] Task ainda não encontrada para a conversa ${conversationId}.`);
           }
-        } else {
-           const errTxt = await tasksRes.text();
-           console.error(`[Kanban] Falha ao listar tasks [${tasksRes.status}]:`, errTxt);
+        } catch (err) {
+          console.error(`[Kanban] Erro na tentativa ${i + 1}:`, err.message);
         }
-      } catch (err) {
-         console.error('[Kanban] Erro inesperado na integração:', err.message);
       }
-    } else if (!KANBAN_BOARD_ID) {
-      console.log('[Kanban] KANBAN_BOARD_ID não configurado. Pulando atualização.');
+
+      if (!kanbanUpdated) {
+        console.warn(`[Kanban] Não foi possível atualizar o card após ${retryDelays.length} tentativas.`);
+      }
     }
 
     // ── Resposta de sucesso ──
